@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  #API server requires SSL. Please set $api_allow_unsafe in config.php to override
+  phpipam-web:
+    image: phpipam/phpipam-www:latest
+    ports:
+      - "1080:80"
+      - "10443:443"
+    environment:
+      - TZ=Europe/EEST
+      - IPAM_DATABASE_USER=phpipam
+      - IPAM_DATABASE_HOST=phpipam-mariadb
+      - IPAM_DATABASE_PASS=my_secret_phpipam_pass
+      - IPAM_DATABASE_WEBHOST=%
+    restart: unless-stopped
+    volumes:
+      - phpipam-logo:/phpipam/css/images/logo
+      - ./config.php:/phpipam/config.php
+    depends_on:
+      - phpipam-mariadb
+
+  phpipam-cron:
+    image: phpipam/phpipam-cron:latest
+    environment:
+      - TZ=Europe/EEST
+      - IPAM_DATABASE_USER=phpipam
+      - IPAM_DATABASE_HOST=phpipam-mariadb
+      - IPAM_DATABASE_PASS=my_secret_phpipam_pass
+      - SCAN_INTERVAL=1h
+    restart: unless-stopped
+    depends_on:
+      - phpipam-mariadb
+
+  phpipam-mariadb:
+    image: mariadb:latest
+    environment:
+      - TZ=Europe/EEST
+      - MYSQL_ROOT_PASSWORD=my_secret_mysql_root_pass
+    restart: unless-stopped
+    volumes:
+      - phpipam-db-data:/var/lib/mysql
+
+volumes:
+  phpipam-db-data:
+  phpipam-logo:
